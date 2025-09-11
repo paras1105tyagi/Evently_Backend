@@ -13,7 +13,15 @@ const config = {
 		booking: process.env.BOOKING_QUEUE || 'booking_queue',
 		notify: process.env.NOTIFY_QUEUE || 'notification_queue'
 	},
-	appSecret: process.env.APP_SECRET || 'dev-secret'
+	appSecret: process.env.APP_SECRET || 'dev-secret',
+	smtp: {
+		host: process.env.SMTP_HOST,
+		port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
+		secure: process.env.SMTP_SECURE === 'true',
+		user: process.env.SMTP_USER,
+		pass: process.env.SMTP_PASS,
+		from: process.env.MAIL_FROM || 'no-reply@example.com'
+	}
 };
 
 module.exports = config;
