@@ -7,5 +7,6 @@ module.exports = {
 	findActive: () => Event.find({ isActive: true }).sort({ startTime: 1 }).lean(),
 	findAll: () => Event.find().sort({ startTime: 1 }).lean(),
 	updateById: (id, update) => Event.findByIdAndUpdate(id, update, { new: true }),
-	deleteById: (id) => Event.findByIdAndDelete(id)
+	deleteById: (id) => Event.findByIdAndDelete(id),
+	findActiveById: (id) => Event.findOne({ _id: id, isActive: true }).lean()
 };

@@ -96,4 +96,8 @@ async function subscribe(queueName, handler) {
 	internalSubscribe(queueName, handler);
 }
 
+
+
+
+
 module.exports = { startRabbit, publishToQueue, subscribe };

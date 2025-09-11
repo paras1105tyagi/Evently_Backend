@@ -33,7 +33,8 @@ const options = {
 			'/api/admin/analytics/most-booked': { get: { summary: 'Most booked events (includes eventName)', responses: { '200': { description: 'OK' } } } },
 			'/api/admin/analytics/total-bookings-per-event': { get: { summary: 'Total bookings per event (net, includes eventName)', responses: { '200': { description: 'OK' } } } },
 			'/api/admin/analytics/cancel-rate': { get: { summary: 'Cancellation rate', responses: { '200': { description: 'OK' } } } },
-			'/api/admin/analytics/capacity-utilization': { get: { summary: 'Capacity utilization', parameters: [ { name:'eventId', in:'query', required:false, schema:{ type:'string' } } ], responses: { '200': { description: 'OK' } } } }
+			'/api/admin/analytics/capacity-utilization': { get: { summary: 'Capacity utilization', parameters: [ { name:'eventId', in:'query', required:false, schema:{ type:'string' } } ], responses: { '200': { description: 'OK' } } } },
+			'/api/admin/waitlist': { get: { summary: 'Waitlist status for an event', parameters: [ { name:'eventId', in:'query', required:true, schema:{ type:'string' } } ], responses: { '200': { description: 'OK' }, '400': { description: 'Validation error' } } } }
 		}
 	},
 	apis: []

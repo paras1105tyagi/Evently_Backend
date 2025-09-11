@@ -3,6 +3,8 @@
 const eventRepo = require('../repositories/event.repo');
 const Ticket = require('../models/ticket.model');
 const { mostBookedEvents, totalBookingsPerEvent, cancellationRate, capacityUtilization } = require('../services/analytics.service');
+const waitlistRepo = require('../repositories/waitlist.repo');
+const ticketRepo = require('../repositories/ticket.repo');
 
 async function createEvent(req, res, next) {
 	try {
@@ -30,6 +32,18 @@ async function updateEvent(req, res, next) {
 		const { id } = req.params;
 		const update = req.body;
 		const event = await eventRepo.updateById(id, update);
+		// Reconcile ticket seats if seats changed
+		if (update && typeof update.seats === 'number') {
+			const newSeats = update.seats;
+			// Create missing tickets up to newSeats
+			const existingMax = await Ticket.find({ eventId: id }).sort({ seatNumber: -1 }).limit(1).lean();
+			const currentMax = existingMax[0]?.seatNumber || 0;
+			if (newSeats > currentMax) {
+				await ticketRepo.createSeatRange(id, currentMax + 1, newSeats);
+			} else if (newSeats < currentMax) {
+				await ticketRepo.deleteAvailableAboveSeat(id, newSeats);
+			}
+		}
 		res.json(event);
 	} catch (err) {
 		next(err);
@@ -82,12 +96,18 @@ async function analyticsCapacityUtilization(req, res, next) {
 		next(err);
 	}
 }
-// 68c13dce3fb2cf5b0cef4575
-// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGMxM2Q2NTNmYjJjZjViMGNlZjQ1NzIiLCJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6InVzZXJAYWRtaW4uY29tIiwiaWF0IjoxNzU3NDk0NjY2LCJleHAiOjE3NTc1ODEwNjZ9.BqTSq6BmPRBRYPxJZn1-J6ctYIAuoEJ-jlR2KXBNNo8
-// 
 
+async function waitlistStatus(req, res, next) {
+	try {
+		const { eventId } = req.query || {};
+		if (!eventId) return res.status(400).json({ error: 'eventId is required' });
+		const entries = await waitlistRepo.listByEvent(eventId);
+		res.json({ items: entries });
+	} catch (err) {
+		next(err);
+	}
+}
 
-// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGMxM2MzYzNmYjJjZjViMGNlZjQ1NjkiLCJyb2xlIjoidXNlciIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc1NzQ5NDk1MiwiZXhwIjoxNzU3NTgxMzUyfQ.2OSmAuTBr3pBqdYPX3mDfvgt5S8AsX8pa3YTPpiHCe8
 module.exports = {
 	createEvent,
 	listEvents,
@@ -96,5 +116,6 @@ module.exports = {
 	analyticsMostBooked,
 	analyticsTotalBookingsPerEvent,
 	analyticsCancelRate,
-	analyticsCapacityUtilization
+	analyticsCapacityUtilization,
+	waitlistStatus
 };

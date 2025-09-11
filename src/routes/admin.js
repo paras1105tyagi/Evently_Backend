@@ -11,10 +11,11 @@ const {
 	analyticsMostBooked,
 	analyticsTotalBookingsPerEvent,
 	analyticsCancelRate,
-	analyticsCapacityUtilization
+	analyticsCapacityUtilization,
+	waitlistStatus
 } = require('../controllers/admin.controller');
 
-const router = Router();0
+const router = Router();
 
 const createEventSchema = Joi.object({
 	body: Joi.object({
@@ -31,14 +32,7 @@ router.get('/events', listEvents);
 
 const updateEventSchema = Joi.object({
 	params: Joi.object({ id: Joi.string().required() }),
-	body: Joi.object({
-		name: Joi.string(),
-		venue: Joi.string(),
-		startTime: Joi.date().iso(),
-		capacity: Joi.number().integer().min(1),
-		seats: Joi.number().integer().min(1),
-		isActive: Joi.boolean()
-	}).min(1)
+	body: Joi.object({ name: Joi.string(), venue: Joi.string(), startTime: Joi.date().iso(), capacity: Joi.number().integer().min(1), seats: Joi.number().integer().min(1), isActive: Joi.boolean() }).min(1)
 });
 router.patch('/events/:id', validate(updateEventSchema), updateEvent);
 
@@ -51,5 +45,8 @@ router.get('/analytics/cancel-rate', analyticsCancelRate);
 
 const capUtilSchema = Joi.object({ query: Joi.object({ eventId: Joi.string().optional() }) });
 router.get('/analytics/capacity-utilization', validate(capUtilSchema), analyticsCapacityUtilization);
+
+const waitlistSchema = Joi.object({ query: Joi.object({ eventId: Joi.string().required() }) });
+router.get('/waitlist', validate(waitlistSchema), waitlistStatus);
 
 module.exports = router;
