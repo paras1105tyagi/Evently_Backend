@@ -37,6 +37,12 @@ async function bookTicket(req, res, next) {
     if (!userId || !eventId) return res.status(400).json({ error: 'userId and eventId are required' });
     const ev = await eventRepo.findActiveById(eventId);
     if (!ev) return res.status(404).json({ error: 'Event not found or inactive' });
+    // Enforce seat bounds: 1..ev.seats if seatNumber is provided
+    if (seatNumber != null) {
+      if (!Number.isInteger(seatNumber) || seatNumber < 1 || seatNumber > ev.seats) {
+        return res.status(400).json({ error: `seatNumber must be an integer between 1 and ${ev.seats}` });
+      }
+    }
     const { bookingId } = await enqueueBooking({ userId, eventId, seatNumber });
     res.status(202).json({ bookingId, status: 'queued' });
   } catch (err) {

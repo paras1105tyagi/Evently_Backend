@@ -6,6 +6,14 @@ const { connectMongo } = require('./db/mongoose');
 const { startRabbit } = require('./queues/rabbit');
 const { startBookingConsumer } = require('./services/booking.service');
 const { startNotificationConsumer } = require('./services/notification.service');
+const logger = require('./utils/logger');
+
+process.on('unhandledRejection', (reason) => {
+	logger.error('UnhandledRejection', { reason: (reason && reason.message) || reason });
+});
+process.on('uncaughtException', (err) => {
+	logger.error('UncaughtException', { err: err.message, stack: err.stack });
+});
 
 async function start() {
 	try {

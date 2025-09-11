@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const { publishToQueue, startRabbit, subscribe } = require('../queues/rabbit');
 const config = require('../config');
 const ticketRepo = require('../repositories/ticket.repo');
+const eventRepo = require('../repositories/event.repo');
 const historyRepo = require('../repositories/bookingHistory.repo');
 const waitlistRepo = require('../repositories/waitlist.repo');
 const logger = require('../utils/logger');
@@ -42,6 +43,24 @@ async function processBookingMessage(message) {
 
 async function handleBook({ bookingId, userId, eventId, seatNumber }) {
 	try {
+		// Guard against invalid ObjectIds reaching DB layer
+		const { Types } = require('mongoose');
+		if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(eventId)) {
+			logger.error('Queue handler error', { queueName: config.queues.booking, err: 'Invalid ObjectId in message' });
+			return { ok: false, invalid: true };
+		}
+		// Enforce seat bounds when specified
+		if (seatNumber != null) {
+			const ev = await eventRepo.findActiveById(eventId);
+			if (!ev) {
+				logger.error('Queue handler error', { queueName: config.queues.booking, err: 'Event not found or inactive' });
+				return { ok: false, invalid: true };
+			}
+			if (!Number.isInteger(seatNumber) || seatNumber < 1 || seatNumber > ev.seats) {
+				logger.error('Queue handler error', { queueName: config.queues.booking, err: `Invalid seatNumber ${seatNumber} for event seats ${ev.seats}` });
+				return { ok: false, invalid: true };
+			}
+		}
 		const ticket = await ticketRepo.reserveSeat(eventId, seatNumber, userId, bookingId);
 		if (ticket) {
 			await historyRepo.create({ userId, eventId, action: 'book', bookingId, meta: { seatNumber: ticket.seatNumber } });
