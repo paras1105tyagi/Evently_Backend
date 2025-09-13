@@ -16,7 +16,7 @@ const ticketSchema = new Schema(
 ticketSchema.index({ eventId: 1, seatNumber: 1 }, { unique: true });
 
 ticketSchema.index({ eventId: 1, status: 1 });
-
+ticketSchema.index({ userId: 1, eventId: 1 });
 ticketSchema.index({ createdAt: -1 });
 
 module.exports = model('Ticket', ticketSchema);

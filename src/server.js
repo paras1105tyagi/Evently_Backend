@@ -3,6 +3,7 @@
 const app = require('./app');
 const config = require('./config');
 const { connectMongo } = require('./db/mongoose');
+const { db } = require('./models/ticket.model');
 const { startRabbit } = require('./queues/rabbit');
 const { startBookingConsumer } = require('./services/booking.service');
 const { startNotificationConsumer } = require('./services/notification.service');

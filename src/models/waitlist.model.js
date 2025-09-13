@@ -14,5 +14,5 @@ const waitlistSchema = new Schema(
 );
 
 waitlistSchema.index({ eventId: 1, status: 1, createdAt: 1 });
-
+waitlistSchema.index({ userId: 1, eventId: 1 });
 module.exports = model('Waitlist', waitlistSchema);

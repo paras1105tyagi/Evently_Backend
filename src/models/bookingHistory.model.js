@@ -14,5 +14,7 @@ const bookingHistorySchema = new Schema(
 );
 
 bookingHistorySchema.index({ createdAt: -1 });
-
+bookingHistorySchema.index({ userId:1,createdAt: -1 });
+bookingHistorySchema.index({ userId: 1, eventId: 1 });         // check if user booked event
+bookingHistorySchema.index({ eventId: 1, action: 1 });    
 module.exports = model('BookingHistory', bookingHistorySchema);
