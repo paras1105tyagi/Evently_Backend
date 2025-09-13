@@ -7,6 +7,7 @@ const { db } = require('./models/ticket.model');
 const { startRabbit } = require('./queues/rabbit');
 const { startBookingConsumer } = require('./services/booking.service');
 const { startNotificationConsumer } = require('./services/notification.service');
+const redisClient = require('./config/redis');
 const logger = require('./utils/logger');
 
 process.on('unhandledRejection', (reason) => {
@@ -19,6 +20,7 @@ process.on('uncaughtException', (err) => {
 async function start() {
 	try {
 		await connectMongo();
+		await redisClient.connect();
 		await startRabbit();
 		startBookingConsumer();
 		startNotificationConsumer();

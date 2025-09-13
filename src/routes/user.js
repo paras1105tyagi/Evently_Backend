@@ -4,11 +4,12 @@ const { Router } = require('express');
 const Joi = require('joi');
 const mongoose = require('mongoose');
 const validate = require('../middlewares/validate');
+const { createCacheMiddleware, cacheKeyGenerators } = require('../middlewares/cache');
 const { listEvents, listSeats, bookTicket, cancelTicket, bookingHistory } = require('../controllers/user.controller');
 
 const router = Router();
 
-router.get('/events', listEvents);
+router.get('/events', createCacheMiddleware('user:events', 300, cacheKeyGenerators.userEvents), listEvents);
 
 const objectIdString = Joi.string().custom((value, helpers) => {
 	if (!mongoose.Types.ObjectId.isValid(value)) {

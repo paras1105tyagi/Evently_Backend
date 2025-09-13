@@ -8,6 +8,7 @@ const config = {
 	environment: process.env.NODE_ENV || 'development',
 	port: Number(process.env.PORT || 3000),
 	mongoUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/event_management',
+	redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
 	rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://localhost',
 	queues: {
 		booking: process.env.BOOKING_QUEUE || 'booking_queue',

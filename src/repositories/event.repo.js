@@ -3,6 +3,7 @@
 const Event = require('../models/event.model');
 
 module.exports = {
+	findById: (id) => Event.findById(id).lean(),
 	create: (data) => Event.create(data),
 	findActive: () => Event.find({ isActive: true }).sort({ startTime: 1 }).lean(),
 	findAll: () => Event.find().sort({ startTime: 1 }).lean(),

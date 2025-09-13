@@ -31,6 +31,13 @@ async function updateEvent(req, res, next) {
 	try {
 		const { id } = req.params;
 		const update = req.body;
+		const org_event = await eventRepo.findById(id);
+		if (!org_event) return res.status(404).json({ error: 'Event not found' });
+
+		if(update.seats && org_event.seats > update.seats){
+			return res.status(400).json({ error: 'Cannot decrease seats' });
+		}
+		
 		const event = await eventRepo.updateById(id, update);
 		// Reconcile ticket seats if seats changed
 		if (update && typeof update.seats === 'number') {

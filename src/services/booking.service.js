@@ -7,8 +7,18 @@ const ticketRepo = require('../repositories/ticket.repo');
 const eventRepo = require('../repositories/event.repo');
 const historyRepo = require('../repositories/bookingHistory.repo');
 const waitlistRepo = require('../repositories/waitlist.repo');
+const redisClient = require('../config/redis');
 const logger = require('../utils/logger');
 const { ApiError } = require('../middlewares/error');
+
+async function invalidateAnalyticsCache() {
+	try {
+		await redisClient.delPattern('admin:analytics:*');
+		logger.info('Analytics cache invalidated');
+	} catch (error) {
+		logger.error('Failed to invalidate analytics cache:', error);
+	}
+}
 
 async function enqueueBooking({ userId, eventId, seatNumber }) {
 	try {
@@ -65,6 +75,7 @@ async function handleBook({ bookingId, userId, eventId, seatNumber }) {
 		if (ticket) {
 			await historyRepo.create({ userId, eventId, action: 'book', bookingId, meta: { seatNumber: ticket.seatNumber } });
 			await publishToQueue(config.queues.notify, { type: 'BOOK_CONFIRMED', userId, eventId, bookingId, seatNumber: ticket.seatNumber });
+			await invalidateAnalyticsCache();
 			return { ok: true, seatNumber: ticket.seatNumber };
 		}
 		await historyRepo.create({ userId, eventId, action: 'waitlist', bookingId, meta: { requestedSeat: seatNumber } });
@@ -95,6 +106,7 @@ async function tryPromoteWaitlist(eventId, freedSeatNumber) {
 		await waitlistRepo.complete(entry._id);
 		await historyRepo.create({ userId: entry.userId, eventId, action: 'book', bookingId: ticket.bookingId, meta: { seatNumber: ticket.seatNumber, promoted: true } });
 		await publishToQueue(config.queues.notify, { type: 'BOOK_CONFIRMED', userId: entry.userId, eventId, bookingId: ticket.bookingId, seatNumber: ticket.seatNumber });
+		await invalidateAnalyticsCache();
 		return true;
 	}
 	return false;
@@ -110,6 +122,7 @@ async function handleCancel({ bookingId }) {
 			await historyRepo.create({ userId: ticket.userId, eventId: ticket.eventId, action: 'cancel', bookingId, meta: { seatNumber: ticket.seatNumber } });
 			await publishToQueue(config.queues.notify, { type: 'CANCELLED', userId: ticket.userId, eventId: ticket.eventId, bookingId, seatNumber: ticket.seatNumber });
 			await tryPromoteWaitlist(ticket.eventId, ticket.seatNumber);
+			await invalidateAnalyticsCache();
 			return { ok: true, seatNumber: ticket.seatNumber };
 		}
 		// If not booked, try cancel a waitlisted entry
@@ -117,6 +130,7 @@ async function handleCancel({ bookingId }) {
 		if (wl) {
 			await historyRepo.create({ userId: wl.userId, eventId: wl.eventId, action: 'cancel', bookingId, meta: { waitlisted: true, requestedSeat: wl.requestedSeat } });
 			await publishToQueue(config.queues.notify, { type: 'CANCELLED', userId: wl.userId, eventId: wl.eventId, bookingId, requestedSeat: wl.requestedSeat });
+			await invalidateAnalyticsCache();
 			return { ok: true, waitlisted: true };
 		}
 		return { ok: false };

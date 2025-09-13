@@ -3,6 +3,7 @@
 const { Router } = require('express');
 const Joi = require('joi');
 const validate = require('../middlewares/validate');
+const { createCacheMiddleware, createCacheInvalidationMiddleware, cacheKeyGenerators } = require('../middlewares/cache');
 const {
 	createEvent,
 	listEvents,
@@ -26,20 +27,20 @@ const createEventSchema = Joi.object({
 		seats: Joi.number().integer().min(1).required()
 	})
 });
-router.post('/events', validate(createEventSchema), createEvent);
+router.post('/events', validate(createEventSchema), createCacheInvalidationMiddleware(['user:events:*', 'admin:events:*', 'admin:analytics:*']), createEvent);
 
-router.get('/events', listEvents);
+router.get('/events', createCacheMiddleware('admin:events', 300, cacheKeyGenerators.adminEvents), listEvents);
 
 const updateEventSchema = Joi.object({
 	params: Joi.object({ id: Joi.string().required() }),
 	body: Joi.object({ name: Joi.string(), venue: Joi.string(), startTime: Joi.date().iso(), capacity: Joi.number().integer().min(1), seats: Joi.number().integer().min(1), isActive: Joi.boolean() }).min(1)
 });
-router.patch('/events/:id', validate(updateEventSchema), updateEvent);
+router.patch('/events/:id', validate(updateEventSchema), createCacheInvalidationMiddleware(['user:events:*', 'admin:events:*', 'admin:analytics:*']), updateEvent);
 
 const deleteEventSchema = Joi.object({ params: Joi.object({ id: Joi.string().required() }) });
-router.delete('/events/:id', validate(deleteEventSchema), deleteEvent);
+router.delete('/events/:id', validate(deleteEventSchema), createCacheInvalidationMiddleware(['user:events:*', 'admin:events:*', 'admin:analytics:*']), deleteEvent);
 
-router.get('/analytics/most-booked', analyticsMostBooked);
+router.get('/analytics/most-booked', createCacheMiddleware('admin:analytics:most-booked', 600, cacheKeyGenerators.adminMostBooked), analyticsMostBooked);
 router.get('/analytics/total-bookings-per-event', analyticsTotalBookingsPerEvent);
 router.get('/analytics/cancel-rate', analyticsCancelRate);
 
