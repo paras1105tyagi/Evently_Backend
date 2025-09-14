@@ -6,7 +6,7 @@ const options = {
 	definition: {
 		openapi: '3.0.0',
 		info: { title: 'Event Management API', version: '1.0.0' },
-		servers: [ { url: 'http://localhost:3000' } ],
+		servers: [ { url: 'https://evently-backend-2-0pfm.onrender.com' } ],
 		components: {
 			securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } },
 			schemas: {
